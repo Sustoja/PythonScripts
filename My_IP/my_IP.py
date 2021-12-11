@@ -14,7 +14,6 @@ CONFIG = configparser.ConfigParser(inline_comment_prefixes="#")
 
 def read_ini():
     # Read INI file into a global variable.
-    # Same name as the script but with .ini extension
     ini_file = __file__.replace('.py', '.ini')
     CONFIG.read(ini_file)
 
