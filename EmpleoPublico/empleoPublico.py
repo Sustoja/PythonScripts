@@ -50,8 +50,8 @@ def send_msg(subject, body):
         mail.login(sender_email, password)
         mail.sendmail(sender_email, receiver_email, msg.as_string())
         mail.quit()
-    except:
-        print('ERROR al enviar el correo. Comprueba los valores del fichero .INI')
+    except BaseException as error:
+        raise SystemExit(f"Unable to send alert email via {smtp_server}") from error
 
 
 def scrapping_boe(url):
