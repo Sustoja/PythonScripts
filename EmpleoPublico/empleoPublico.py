@@ -6,13 +6,13 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import configparser
 
+
 # Init file global variable.
 CONFIG = configparser.ConfigParser(inline_comment_prefixes="#")
 
 
 def read_ini():
     # Read INI file into a global variable.
-    # Same name as the script but with .ini extension
     ini_file = __file__.replace('.py', '.ini')
     CONFIG.read(ini_file)
 
@@ -43,12 +43,15 @@ def send_msg(subject, body):
     msg.attach(part2)
 
     # Send the message via local SMTP server.
-    mail = smtplib.SMTP(smtp_server, port)
-    mail.ehlo()
-    mail.starttls()
-    mail.login(sender_email, password)
-    mail.sendmail(sender_email, receiver_email, msg.as_string())
-    mail.quit()
+    try:
+        mail = smtplib.SMTP(smtp_server, port)
+        mail.ehlo()
+        mail.starttls()
+        mail.login(sender_email, password)
+        mail.sendmail(sender_email, receiver_email, msg.as_string())
+        mail.quit()
+    except:
+        print('ERROR al enviar el correo. Comprueba los valores del fichero .INI')
 
 
 def scrapping_boe(url):
