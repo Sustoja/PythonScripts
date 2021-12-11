@@ -1,6 +1,5 @@
 # Ficheros con informacion privada
 *.NOTFORGIT
-*.ini
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
