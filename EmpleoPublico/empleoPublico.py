@@ -6,18 +6,17 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import configparser
 
-
 # Init file global variable.
 CONFIG = configparser.ConfigParser(inline_comment_prefixes="#")
 
 
-def read_ini():
+def read_ini_file():
     # Read INI file into a global variable.
     ini_file = __file__.replace('.py', '.ini')
     CONFIG.read(ini_file)
 
 
-def send_msg(subject, body):
+def send_mail_msg(subject, body):
     # Create message container - the correct MIME type is multipart/alternative.
     port = CONFIG.get('MAIL', "PORT")
     smtp_server = CONFIG.get('MAIL', "SMTP_SERVER")
@@ -54,12 +53,22 @@ def send_msg(subject, body):
         raise SystemExit(f"Unable to send alert email via {smtp_server}") from error
 
 
-def scrapping_boe(url):
+def read_html(url) -> BeautifulSoup:
     response = requests.get(url)
     if response.status_code != 200:
-        return '!!! ERROR en el acceso al BOE'
+        raise requests.exceptions.RequestException
+    return BeautifulSoup(response.text, "html.parser")
 
-    soup = BeautifulSoup(response.text, "html.parser")
+
+def boe_webscrapper():
+    today = date.today().strftime("%d/%m/%Y")
+    (d, m, y) = today.split('/')
+    url_boe = 'https://www.boe.es/boe/dias/' + y + '/' + m + '/' + d + '/index.php?s=2B'
+    try:
+        soup = read_html(url_boe)
+    except requests.exceptions.RequestException:
+        return 'ERROR en el acceso al BOE'
+
     liTag = soup.find_all("li", {"class": "dispo"})
     result = "<ol>"
     for dispo in liTag:
@@ -70,24 +79,28 @@ def scrapping_boe(url):
     return result
 
 
-def scrapping_boam(url):
-    # Get the URL for today's BOAM.
-    # It is embedded in the body and cannot be built directly from today's date
-    response = requests.get(url)
-    if response.status_code != 200:
-        return '!!! ERROR en el acceso al BOAM'
-    soup = BeautifulSoup(response.text, "html.parser")
-    divTag = soup.find_all("div", {"class": "col-sm-8 visited-color"})
-    todaysBOAM = 'https://sede.madrid.es' + divTag[0].find_all('a')[0].get('href')
+def boam_webscrapper():
+    # Get the website main page. Today's BOAM is not directly here, just a link to it
+    url_boam = "https://sede.madrid.es/portal/site/tramites/menuitem.c5ae73b3eef2caf7cf32e4e5a8a409a0/?" \
+               "vgnextoid=3ddc814231ede410VgnVCM1000000b205a0aRCRD&vgnextchannel=3ddc814231ede410VgnVCM" \
+               "1000000b205a0aRCRD&vgnextfmt=default"
+    try:
+        soup = read_html(url_boam)
+    except requests.exceptions.RequestException:
+        return 'ERROR en el acceso al BOAM'
 
-    # Get today's BOAM and extract the "Personal -> Convocatorias" links
-    response = requests.get(todaysBOAM)
-    if response.status_code != 200:
-        return '!!! ERROR en el acceso al BOAM'
-    soup = BeautifulSoup(response.text, "html.parser")
-    liTag = soup.find_all("li", {"id": "61_S"})
+    # Find today's BOAM link and get the contents
+    div_tag = soup.find_all("div", {"class": "col-sm-8 visited-color"})
+    todays_boam = 'https://sede.madrid.es' + div_tag[0].find_all('a')[0].get('href')
+    try:
+        soup = read_html(todays_boam)
+    except requests.exceptions.RequestException:
+        return 'ERROR en el acceso al BOAM'
+
+    # Extract the "Personal -> Convocatorias" links
+    li_tag = soup.find_all("li", {"id": "61_S"})
     result = "<ol>"
-    for dispo in liTag[0].find_all('a'):
+    for dispo in li_tag[0].find_all('a'):
         title = dispo.get_text()
         link = dispo.get('href')
         result += ('<li>' + title + '\n<br><a href=\"https://sede.madrid.es' + link + '\">Descargar</a></li><br>')
@@ -95,33 +108,34 @@ def scrapping_boam(url):
     return result
 
 
-def scrapping_bocm(url):
+def bocm_webscrapper():
     # Get the URL for today's summary.
-    # It is embedded in the body and cannot be built directly from today's date
-    response = requests.get(url)
-    if response.status_code != 200:
-        return '!!! ERROR en el acceso al BOCM'
-    soup = BeautifulSoup(response.text, "html.parser")
-    divTag = soup.find("div", {"class": "field field-name-field-content-name field-type-text field-label-hidden "
-                                        "field-name-node-link"})
-    todaysBOCM = 'https://www.bocm.es' + divTag.find('a').get('href')
+    # It is embedded in the page and cannot be made up from today's date
+    url_bocm = "https://www.bocm.es/ultimo-bocm"
+    try:
+        soup = read_html(url_bocm)
+    except requests.exceptions.RequestException:
+        return
 
     # Get today's BOCM and extract the "Autoridades y Personal" links
-    response = requests.get(todaysBOCM)
-    if response.status_code != 200:
-        return '!!! ERROR en el acceso al BOCM'
-    soup = BeautifulSoup(response.text, "html.parser")
+    div_tag = soup.find("div", {"class": "field field-name-field-content-name field-type-text field-label-hidden "
+                                         "field-name-node-link"})
+    todays_bocm = 'https://www.bocm.es' + div_tag.find('a').get('href')
+    try:
+        soup = read_html(todays_bocm)
+    except requests.exceptions.RequestException:
+        return 'ERROR en el acceso al BOAM'
 
     # Get date of BOCM. It will be needed later on to make up links to the PDF files
-    divTag = soup.find("span", {"class": "date-display-single"})
-    (y, m, d) = divTag.attrs['content'][0:10].split("-")
+    div_tag = soup.find("span", {"class": "date-display-single"})
+    (y, m, d) = div_tag.attrs['content'][0:10].split("-")
 
-    divTag = soup.find("div", {"class": "view-display-id-seccion_1"})  # Section #1 is Autoridades y Personal
-    divTag = divTag.find("div", {"class": "view-grouping"})
-    divTag = divTag.find_all("div", {"class": "field-item even"})
+    div_tag = soup.find("div", {"class": "view-display-id-seccion_1"})  # Section #1 is Autoridades y Personal
+    div_tag = div_tag.find("div", {"class": "view-grouping"})
+    div_tag = div_tag.find_all("div", {"class": "field-item even"})
     i = 0
     result = "<ol>"
-    for dispo in divTag:
+    for dispo in div_tag:
         i += 1
         if (i % 6) != 2:  # This is very, very specific. It will break easily but I found no other way
             continue
@@ -132,27 +146,16 @@ def scrapping_bocm(url):
 
 
 def main():
+    # Nothing gets published on Sunday
     if date.today().strftime('%A') == "Sunday":
         return
+
+    read_ini_file()
     today = date.today().strftime("%d/%m/%Y")
-    (d, m, y) = today.split('/')
 
-    read_ini()
-
-    URLBOE = 'https://www.boe.es/boe/dias/' + y + '/' + m + '/' + d + '/index.php?s=2B'
-    responseBOE = scrapping_boe(URLBOE)
-    send_msg(f'Ofertas de empleo en el BOE ({today})', responseBOE)
-
-    URLBOAM = "https://sede.madrid.es/portal/site/tramites/menuitem.c5ae73b3eef2caf7cf32e4e5a8a409a0/?" \
-              "vgnextoid=3ddc814231ede410VgnVCM1000000b205a0aRCRD&vgnextchannel=3ddc814231ede410VgnVCM" \
-              "1000000b205a0aRCRD&vgnextfmt=default"
-    responseBOAM = scrapping_boam(URLBOAM)
-    send_msg(f'Ofertas de empleo en el Ayuntamiento de Madrid ({today})', responseBOAM)
-
-    URLBOCM = "https://www.bocm.es/ultimo-bocm"
-    responseBOCAM = scrapping_bocm(URLBOCM)
-    send_msg(f'Ofertas de empleo en la Comunidad de Madrid ({today})', responseBOCAM)
-
+    send_mail_msg(f'Ofertas de empleo en el BOE ({today})', boe_webscrapper())
+    send_mail_msg(f'Ofertas de empleo en el Ayuntamiento de Madrid ({today})', boam_webscrapper())
+    send_mail_msg(f'Ofertas de empleo en la Comunidad de Madrid ({today})', bocm_webscrapper())
     return
 
 
