@@ -6,7 +6,7 @@ import urllib.error
 import smtplib
 import ssl
 import configparser
-import os
+from pathlib import Path
 
 # Init file global variable.
 CONFIG = configparser.ConfigParser(inline_comment_prefixes="#")
@@ -77,10 +77,12 @@ def main():
     new_ip = get_current_ip()
 
     if old_ip != new_ip:
+        save_current_ip(new_ip)
         send_alert(f"""Subject: La IP de casa ha cambiado\n
                     Nueva IP: {new_ip}
                     Antigua IP: {old_ip}""")
-        save_current_ip(new_ip)
+    else:
+        Path(get_ip_file()).touch()
 
 
 if __name__ == '__main__':
