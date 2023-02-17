@@ -38,6 +38,13 @@ llamada a una URL que proporciona Uptime Kuma y que es individual para cada serv
 
 ---
 
+### DNS Casa
+Cambia el servidor DNS configurado en macOS en función de la red Wi-Fi a la que estemos conectados. Por ejemplo,
+en casa usamos un servidor Pi-Hole para evitar la publicidad pero cuando estamos fuera utilizamos un servidor
+DNS público.
+
+---
+
 ### Network Devices
 Detecta todos los equipos con ssh activado y genera un prototipo de fichero 'hosts' que se puede 
 adaptar facilmente para usarlo como inventario para [Ansible](https://github.com/Sustoja/Ansible).
