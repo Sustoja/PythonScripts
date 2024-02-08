@@ -5,7 +5,7 @@
 
 ### Empleo Público
 Web Scraping para extraer las ofertas de empleo público del BOE, el Ayuntamiento de Madrid y la 
-Comunidad de Madrid. El resumen de cada boletín lo envía por correo a la dirección que se le indique, formateado en 
+Comunidad de Madrid. El resumen de cada boletín lo envía por correo a la dirección que se le indique, en 
 HTML y con enlaces directos para la descarga de los PDF correspondientes.
 
 <p align="center">
