@@ -56,13 +56,26 @@ def send_mail_msg(subject, body):
 
 
 def read_html(url) -> BeautifulSoup:
-    ua = UserAgent()
-    hdr = {'User-Agent': ua.random,
+    # Ver comentairo largo más abajo para saber por qué están comentadas las siguientes dos líneas.
+    # ua = UserAgent()
+    hdr = {#'User-Agent': ua.random,
+           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15',
            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
            'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
            'Accept-Encoding': 'none',
            'Accept-Language': 'en-US,en;q=0.8',
            'Connection': 'keep-alive'}
+
+    # Desde 2024, a veces, la web del Ayuntamiento no permite el acceso según la cabecera de la petición http.
+    # Con este código guardamos la cabecera que generamos al principio de esta función ('User-Agent': ua.random)
+    # hasta que encontramos una que funcione. Entonces la ponemos a mano y comentamos la línea con el valor
+    # aleatorio para asegurarnos de que hay contestación (hasta que cambién otra vez en el Ayuntamiento, claro).
+    DEBUG = False
+    if DEBUG:
+        with open("registro_user_agent.txt", "a") as f:
+            f.write(hdr['User-Agent'])
+            f.write('\n--------------------------------------------------\n')
+
     response = requests.get(url, headers=hdr)
     if response.status_code != 200:
         raise requests.exceptions.RequestException
@@ -98,7 +111,7 @@ def boam_webscrapper():
     try:
         soup = read_html(url_boam)
     except requests.exceptions.RequestException:
-        return 'ERROR en el acceso al BOAM'
+        return 'ERROR en el primer acceso al BOAM'
 
     # Find today's BOAM link and get the contents
     div_tag = soup.find_all("div", {"class": "col-sm-8 visited-color"})
@@ -106,7 +119,7 @@ def boam_webscrapper():
     try:
         soup = read_html(todays_boam)
     except requests.exceptions.RequestException:
-        return 'ERROR en el acceso al BOAM'
+        return 'ERROR en el segundo acceso al BOAM'
 
     # Extract the "Personal -> Convocatorias" links
     li_tag = soup.find_all("li", {"id": "61_S"})
@@ -164,10 +177,11 @@ def main():
     read_ini_file()
     today = date.today().strftime("%d/%m/%Y")
 
-    send_mail_msg(f'Ofertas de empleo en el BOE ({today})', boe_webscrapper())
+    #send_mail_msg(f'Ofertas de empleo en el BOE ({today})', boe_webscrapper())
     send_mail_msg(f'Ofertas de empleo en el Ayuntamiento de Madrid ({today})', boam_webscrapper())
-    send_mail_msg(f'Ofertas de empleo en la Comunidad de Madrid ({today})', bocm_webscrapper())
+    #send_mail_msg(f'Ofertas de empleo en la Comunidad de Madrid ({today})', bocm_webscrapper())
 
 
 if __name__ == '__main__':
     main()
+    
