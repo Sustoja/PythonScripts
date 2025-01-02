@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>JA_DNS_Daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/ja/Desarrollo/HomeLab/JA_DNS_Daemon.sh</string>
+    </array>
+    <key>WatchPaths</key>
+    <array>
+        <string>/Library/Preferences/com.apple.wifi.known-networks.plist</string>
+    </array>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
