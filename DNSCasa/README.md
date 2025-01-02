@@ -28,5 +28,5 @@ vi /Library/LaunchAgents/JA_DNS_Daemon.plist
 launchctl load /Library/LaunchAgents/JA_DNS_Daemon.plist
 ```
 
-# JA_DNS_Daemon.sh
+## JA_DNS_Daemon.sh
 Script de shell que comprueba el nombre de la wifi y actualiza el DNS. Actualizado para MacOS Sequoia.
